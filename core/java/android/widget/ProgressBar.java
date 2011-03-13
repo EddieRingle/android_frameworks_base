@@ -210,7 +210,7 @@ public class ProgressBar extends View {
 
         drawable = a.getDrawable(R.styleable.ProgressBar_indeterminateDrawable);
         if (drawable != null) {
-            drawable = tileifyIndeterminate(drawable);
+            //drawable = tileifyIndeterminate(drawable);
             setIndeterminateDrawable(drawable);
         }
 
@@ -835,21 +835,43 @@ public class ProgressBar extends View {
             canvas.save();
             canvas.translate(mPaddingLeft, mPaddingTop);
             long time = getDrawingTime();
-            if (mAnimation != null) {
-                mAnimation.getTransformation(time, mTransformation);
-                float scale = mTransformation.getAlpha();
-                try {
-                    mInDrawing = true;
-                    d.setLevel((int) (scale * MAX_LEVEL));
-                } finally {
-                    mInDrawing = false;
+            if (mIndeterminate && d instanceof BitmapDrawable) {
+                /* Calculate horizontal offset */
+                float timeDelta = (time - mLastDrawTime) / 1000.0f;
+                int pixelOffset = 20 * timeDelta;
+
+                Rect newBounds = d.copyBounds();
+                newBounds.offset(pixelOffset, 0);
+
+                /* Scroll off one edge and onto the other */
+                if (newBounds.left > newBounds.width()) {
+                    newBounds.offset(newBounds.width() - newBounds.left, 0);
                 }
-                if (SystemClock.uptimeMillis() - mLastDrawTime >= ANIMATION_RESOLUTION) {
-                    mLastDrawTime = SystemClock.uptimeMillis();
-                    postInvalidateDelayed(ANIMATION_RESOLUTION);
+
+                d.setBounds(newBounds);
+
+                /* Set new last draw time */
+                mLastDrawTime = SystemClock.uptimeMillis();
+
+                /* Draw to canvas */
+                d.draw(canvas);
+            } else {
+                if (mAnimation != null) {
+                    mAnimation.getTransformation(time, mTransformation);
+                    float scale = mTransformation.getAlpha();
+                    try {
+                        mInDrawing = true;
+                        d.setLevel((int) (scale * MAX_LEVEL));
+                    } finally {
+                        mInDrawing = false;
+                    }
+                    if (SystemClock.uptimeMillis() - mLastDrawTime >= ANIMATION_RESOLUTION) {
+                        mLastDrawTime = SystemClock.uptimeMillis();
+                        postInvalidateDelayed(ANIMATION_RESOLUTION);
+                    }
                 }
+                d.draw(canvas);
             }
-            d.draw(canvas);
             canvas.restore();
             if (mShouldStartAnimationDrawable && d instanceof Animatable) {
                 ((Animatable) d).start();
