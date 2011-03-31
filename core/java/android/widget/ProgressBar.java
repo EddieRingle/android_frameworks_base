@@ -838,7 +838,7 @@ public class ProgressBar extends View {
             if (mIndeterminate && d instanceof BitmapDrawable) {
                 /* Calculate horizontal offset */
                 float timeDelta = (time - mLastDrawTime) / 1000.0f;
-                int pixelOffset = 20 * timeDelta;
+                int pixelOffset = (int) (20.0f * timeDelta);
 
                 Rect newBounds = d.copyBounds();
                 newBounds.offset(pixelOffset, 0);
